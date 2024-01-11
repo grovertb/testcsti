@@ -6,7 +6,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { authConfig } from '../utils/config';
 
 interface AuthControllerType {
   username: string;
@@ -18,16 +17,14 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  login(@Body() { username, password }: AuthControllerType) {
-    const user = authConfig.users.find(
-      ({ pass, user }) => user === username && pass === password,
-    );
+  async login(@Body() { username, password }: AuthControllerType) {
+    const user = await this.authService.validateUser(username, password);
 
     if (!user)
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
 
     return {
-      access_token: this.authService.createToken(user.id, user.user),
+      access_token: this.authService.createToken(user.id, user.username),
     };
   }
 }

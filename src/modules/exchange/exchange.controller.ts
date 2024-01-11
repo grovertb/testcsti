@@ -5,20 +5,30 @@ import {
   HttpStatus,
   Post,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 import { ExchangeService } from './exchange.service';
+import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 
-interface ExchangeRequest {
+class ExchangeRequest {
+  @IsNumber()
+  @Min(1)
   amount: number;
+  @IsNotEmpty()
   origin: string;
+  @IsNotEmpty()
   destination: string;
 }
 
-interface ExchangeUpdateRequest {
+class ExchangeUpdateRequest {
+  @IsNotEmpty()
   origin: string;
+  @IsNotEmpty()
   destination: string;
+  @IsNumber()
+  @Min(0)
   rate: number;
 }
 
@@ -28,10 +38,10 @@ export class ExchangeController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('calculate')
-  calculateExchange(@Body() data: ExchangeRequest) {
+  async calculateExchange(@Body(new ValidationPipe()) data: ExchangeRequest) {
     const { amount, origin, destination } = data;
 
-    const exchangeRate = this.exchangeService.getExchangeRate(
+    const exchangeRate = await this.exchangeService.getExchangeRate(
       origin,
       destination,
     );
@@ -51,11 +61,13 @@ export class ExchangeController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('update')
-  updateExchangeRate(@Body() data: ExchangeUpdateRequest) {
+  async updateExchangeRate(
+    @Body(new ValidationPipe()) data: ExchangeUpdateRequest,
+  ) {
     try {
       const { origin, destination, rate } = data;
 
-      this.exchangeService.updateExchangeRate(origin, destination, rate);
+      await this.exchangeService.updateExchangeRate(origin, destination, rate);
 
       return {
         success: true,

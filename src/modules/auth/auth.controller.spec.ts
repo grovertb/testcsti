@@ -1,9 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { HttpException, HttpStatus } from '@nestjs/common';
+
+import { createTestingModuleWithDB } from '../../utils/test-utils';
 import { AuthController } from './auth.controller';
 import { AuthModule } from './auth.module';
 import { AuthService } from './auth.service';
-import { JwtService } from '@nestjs/jwt';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { User } from '../../entities/user.entity';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -11,7 +15,11 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      imports: [
+        AuthModule,
+        createTestingModuleWithDB(),
+        TypeOrmModule.forFeature([User]),
+      ],
       controllers: [AuthController],
       providers: [AuthService, JwtService],
     }).compile();
@@ -30,23 +38,17 @@ describe('AuthController', () => {
         .spyOn(authService, 'createToken')
         .mockReturnValue('mockedAccessToken');
 
-      const result = controller.login({
+      const result = await controller.login({
         username: 'csticorp',
         password: 'demo',
       });
 
-      // Verifica que el resultado sea un objeto con el token de acceso
       expect(result).toEqual({ access_token: 'mockedAccessToken' });
     });
 
     it('should throw an error on failed login', async () => {
-      // Mock para simular credenciales inválidas y lanzar HttpException
-      jest.spyOn(authService, 'validateToken').mockImplementation(() => {
-        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-      });
-
       try {
-        controller.login({
+        await controller.login({
           username: 'testuser',
           password: 'testpassword',
         });
