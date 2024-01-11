@@ -6,9 +6,12 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { ApiProperty } from '@nestjs/swagger';
 
-interface AuthControllerType {
+class AuthControllerType {
+  @ApiProperty()
   username: string;
+  @ApiProperty()
   password: string;
 }
 

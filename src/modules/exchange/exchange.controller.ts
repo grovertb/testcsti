@@ -11,22 +11,34 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { ExchangeService } from './exchange.service';
 import { IsNotEmpty, IsNumber, Min } from 'class-validator';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiProperty,
+} from '@nestjs/swagger';
 
 class ExchangeRequest {
+  @ApiProperty()
   @IsNumber()
   @Min(1)
   amount: number;
+  @ApiProperty()
   @IsNotEmpty()
   origin: string;
+  @ApiProperty()
   @IsNotEmpty()
   destination: string;
 }
 
 class ExchangeUpdateRequest {
+  @ApiProperty()
   @IsNotEmpty()
   origin: string;
+  @ApiProperty()
   @IsNotEmpty()
   destination: string;
+  @ApiProperty()
   @IsNumber()
   @Min(0)
   rate: number;
@@ -36,6 +48,11 @@ class ExchangeUpdateRequest {
 export class ExchangeController {
   constructor(private readonly exchangeService: ExchangeService) {}
 
+  @ApiOperation({
+    summary: 'Calcular intercambio',
+  })
+  @ApiBody({ type: ExchangeRequest, required: true })
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('calculate')
   async calculateExchange(@Body(new ValidationPipe()) data: ExchangeRequest) {
